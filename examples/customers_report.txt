@@ -10,6 +10,10 @@ Health check:
 - Missing owner
 
 Plain-English Health Report:
-This dataset (b2fd91.demo-data-bucket/order_entry/customers) currently has the following problems: Missing owner. Tracing its lineage shows it depends on one upstream job (export_table_customers_to_s3). Because of missing owner, it's hard for anyone on the team to know who's responsible for this data or what it's supposed to contain.
+## Dataset Health Report: Customers (Order Entry)
+
+**Status: ⚠️ Needs Attention**
+
+The customers dataset in the order entry S3 bucket is in partial health — the data itself is being fed by a Spark job called **export_table_customers_to_s3**, which appears to be functioning as expected. However, there is one governance issue flagged: **this dataset has no assigned owner**. This means there is no one formally accountable for monitoring its quality, approving access, or responding if something goes wrong. We recommend assigning an owner as soon as possible to ensure this dataset is properly maintained and supported.
 
 Wrote report back to DataHub as documentation for urn:li:dataset:(urn:li:dataPlatform:s3,b2fd91.demo-data-bucket/order_entry/customers,PROD)

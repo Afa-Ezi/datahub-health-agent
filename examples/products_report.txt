@@ -10,6 +10,10 @@ Health check:
 - Missing owner
 
 Plain-English Health Report:
-This dataset (b2fd91.order_entry_db.order_entry.products) currently has the following problems: Missing owner. Tracing its lineage shows it depends on one upstream job (import_table_products_to_snowflake). Because of missing owner, it's hard for anyone on the team to know who's responsible for this data or what it's supposed to contain.
+## Dataset Health Report: Products Table
+
+**Status: ⚠️ Needs Attention**
+
+The **Products** dataset in Snowflake is generally operational, but has one governance issue that needs to be resolved. Currently, no one is listed as the owner of this dataset, meaning there is no clear point of contact if something goes wrong or if questions arise about the data. The Products table is populated by an automated Spark import job called **"import_table_products_to_snowflake"**, so if data quality issues emerge, that pipeline would be the first place to investigate. **Action needed:** Please assign an owner to this dataset so there is an accountable team or individual responsible for its accuracy and maintenance.
 
 Wrote report back to DataHub as documentation for urn:li:dataset:(urn:li:dataPlatform:snowflake,b2fd91.order_entry_db.order_entry.products,PROD)

@@ -11,35 +11,30 @@ client2 = DataHubClient(server="http://localhost:8080")
 client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
 def explain_health_report(dataset_urn, lineage_result, health_issues):
-    # TEMPORARY STUB — replace with real Anthropic API call once billing is set up
-    # Real version is commented out below for later
+    lineage_summary = str(lineage_result) if lineage_result else "No upstream lineage found."
+    health_summary_full = "\n".join(f"- {issue}" for issue in health_issues) or "No issues found."
 
-    health_summary = ", ".join(health_issues) if health_issues else "no issues"
-    if lineage_result:
-        job_name = lineage_result[0].name or "an unnamed job"
-        lineage_note = f"one upstream job ({job_name})"
-    else:
-        lineage_note = "no upstream lineage"
-    return (
-        f"This dataset ({dataset_urn.split(',')[1]}) currently has the following problems: "
-        f"{health_summary}. Tracing its lineage shows it depends on {lineage_note}. "
-        f"Because of {health_summary.lower()}, it's hard for anyone on the team "
-        f"to know who's responsible for this data or what it's supposed to contain."
+    prompt = f"""You are a data reliability assistant. Given the following information
+about a dataset, write a short, plain-English health report for a non-technical
+stakeholder. Be direct about whether the dataset is healthy or not, and if not,
+explain the likely cause using the lineage info.
+
+Dataset: {dataset_urn}
+
+Upstream lineage:
+{lineage_summary}
+
+Health issues detected:
+{health_summary_full}
+
+Write 3-5 sentences max. No jargon like "URN" or "hops" — describe things in plain terms."""
+
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=300,
+        messages=[{"role": "user", "content": prompt}]
     )
-
-    # --- Real version (uncomment once you have API credit) ---
-    # lineage_summary = str(lineage_result) if lineage_result else "No upstream lineage found."
-    # health_summary_full = "\n".join(f"- {issue}" for issue in health_issues) or "No issues found."
-    # prompt = f"""You are a data reliability assistant...
-    # (full prompt as before)
-    # """
-    # response = client.messages.create(
-    #     model="claude-sonnet-4-6",
-    #     max_tokens=300,
-    #     messages=[{"role": "user", "content": prompt}]
-    # )
-    # return response.content[0].text
-
+    return response.content[0].text
 # Parse command-line argument for dataset name/URN
 parser = argparse.ArgumentParser(description="Check DataHub dataset health and lineage.")
 parser.add_argument("--dataset", required=True, help="Dataset URN to inspect")
