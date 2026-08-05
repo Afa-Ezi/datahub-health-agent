@@ -68,6 +68,20 @@ if not description:
 if not has_owner:
     health_issues.append("Missing owner")
 
+pii_fields = []
+try:
+    entity_obj = client2.entities.get(urn)
+    for field in entity_obj.schema:
+        if field.tags:
+            for tag_assoc in field.tags:
+                if "PII" in tag_assoc.tag:
+                    pii_fields.append(field.field_path)
+except Exception:
+    pass
+
+if pii_fields:
+    health_issues.append(f"Contains PII fields without documented access controls: {', '.join(pii_fields)}")
+
 print("\nHealth check:")
 for issue in health_issues:
     print(f"- {issue}")
