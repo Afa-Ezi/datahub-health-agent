@@ -14,6 +14,6 @@ Plain-English Health Report:
 
 **Status: ⚠️ Needs Attention**
 
-The **Products** dataset in Snowflake is generally operational, but has one governance issue that needs to be resolved. Currently, no one is listed as the owner of this dataset, meaning there is no clear point of contact if something goes wrong or if questions arise about the data. The Products table is populated by an automated Spark import job called **"import_table_products_to_snowflake"**, so if data quality issues emerge, that pipeline would be the first place to investigate. **Action needed:** Please assign an owner to this dataset so there is an accountable team or individual responsible for its accuracy and maintenance.
+The **Products** table in Snowflake is currently in use but has one notable gap: it has no designated owner, meaning there is no clear point of contact if something goes wrong. The data in this table is populated by an automated Spark job called **import_table_products_to_snowflake**, so if the data ever looks incorrect or goes stale, that pipeline would be the first place to investigate. Without an owner assigned, there is a real risk that issues could go unnoticed or unresolved for longer than they should. We recommend assigning a responsible team or individual to this dataset as soon as possible to ensure proper oversight.
 
 Wrote report back to DataHub as documentation for urn:li:dataset:(urn:li:dataPlatform:snowflake,b2fd91.order_entry_db.order_entry.products,PROD)

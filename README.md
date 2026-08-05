@@ -9,7 +9,7 @@ Built for the **DataHub Agent Hackathon 2026**, category: *Agents That Do Real W
 Given a dataset URN, the agent:
 1. Connects to a local DataHub instance and fetches the dataset's metadata
 2. Traces its upstream lineage (what job or table feeds this dataset)
-3. Checks for missing documentation and missing ownership
+3. Checks for missing documentation, missing ownership, and PII fields without documented access controls
 4. Generates a plain-English health report combining all of the above
 5. **Writes that report back into DataHub** as the dataset's documentation — so the finding is inherited by the next person or agent that opens the dataset, not lost in a terminal window
 

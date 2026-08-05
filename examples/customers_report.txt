@@ -1,19 +1,20 @@
 /home/deepy/datahub-health-agent/agent.py:4: ExperimentalWarning: The new datahub SDK (e.g. datahub.sdk.*) is experimental. Our typical backwards-compatibility and stability guarantees do not apply to this code. When it's promoted to stable, the import path will change from `from datahub.sdk import ...` to `from datahub import ...`.
   from datahub.sdk import DataHubClient
 DataHub connection test:
-urn:li:dataset:(urn:li:dataPlatform:s3,b2fd91.demo-data-bucket/order_entry/customers,PROD)
+urn:li:dataset:(urn:li:dataPlatform:postgres,b2fd91.order_entry_db.order_entry.customers,PROD)
 
 Upstream lineage:
-[LineageResult(urn='urn:li:dataJob:(urn:li:dataFlow:(spark,b2fd91.export_table_customers_to_s3,b2fd91.default),b2fd91.export_table_customers_to_s3)', type='DATA_JOB', hops=1, direction='upstream', platform=None, name='export_table_customers_to_s3', description=None, paths=[])]
+[]
 
 Health check:
 - Missing owner
+- Contains PII fields without documented access controls: customer_id
 
 Plain-English Health Report:
-## Dataset Health Report: Customers (Order Entry)
+## Dataset Health Report: Customers Table (Order Entry DB)
 
 **Status: ⚠️ Needs Attention**
 
-The customers dataset in the order entry S3 bucket is in partial health — the data itself is being fed by a Spark job called **export_table_customers_to_s3**, which appears to be functioning as expected. However, there is one governance issue flagged: **this dataset has no assigned owner**. This means there is no one formally accountable for monitoring its quality, approving access, or responding if something goes wrong. We recommend assigning an owner as soon as possible to ensure this dataset is properly maintained and supported.
+This dataset is not fully healthy and has two issues that need to be resolved. First, no one is listed as the owner, meaning there is no clear point of contact if something goes wrong or questions arise. Second, the dataset contains a sensitive customer identifier field that lacks documented access controls, which is a privacy risk — anyone could potentially access this personal information without proper oversight. These issues should be addressed promptly, as customer data carries regulatory and compliance risk if left ungoverned.
 
-Wrote report back to DataHub as documentation for urn:li:dataset:(urn:li:dataPlatform:s3,b2fd91.demo-data-bucket/order_entry/customers,PROD)
+Wrote report back to DataHub as documentation for urn:li:dataset:(urn:li:dataPlatform:postgres,b2fd91.order_entry_db.order_entry.customers,PROD)
