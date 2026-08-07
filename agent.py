@@ -10,6 +10,7 @@ client2 = DataHubClient(server="http://localhost:8080")
 
 client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
+
 def explain_health_report(dataset_urn, lineage_result, health_issues):
     lineage_summary = str(lineage_result) if lineage_result else "No upstream lineage found."
     health_summary_full = "\n".join(f"- {issue}" for issue in health_issues) or "No issues found."
@@ -35,12 +36,7 @@ Write 3-5 sentences max. No jargon like "URN" or "hops" — describe things in p
         messages=[{"role": "user", "content": prompt}]
     )
     return response.content[0].text
-# Parse command-line argument for dataset name/URN
-parser = argparse.ArgumentParser(description="Check DataHub dataset health and lineage.")
-parser.add_argument("--dataset", required=True, help="Dataset URN to inspect")
-args = parser.parse_args()
 
-urn = args.dataset
 
 def write_report_to_datahub(dataset_urn, report_text):
     dataset = client2.entities.get(dataset_urn)
@@ -48,49 +44,83 @@ def write_report_to_datahub(dataset_urn, report_text):
     client2.entities.update(dataset)
     print(f"\nWrote report back to DataHub as documentation for {dataset_urn}")
 
-# Fetch entity info
-entity = graph.get_entity_raw(urn)
-print("DataHub connection test:")
-print(entity["urn"])
 
-# Fetch lineage (upstream)
-lineage_result = client2.lineage.get_lineage(source_urn=urn, direction="upstream")
-print("\nUpstream lineage:")
-print(lineage_result)
+def analyze_dataset(urn):
+    """Runs the full health check pipeline on a single dataset URN."""
+    try:
+        entity = graph.get_entity_raw(urn)
+    except Exception as e:
+        print(f"\nCould not fetch dataset {urn}: {e}")
+        return
 
-# Health check: missing documentation or missing owner
-description = entity["aspects"].get("editableDatasetProperties", {}).get("value", {}).get("description", "")
-has_owner = "ownership" in entity["aspects"]
+    print("\nDataHub connection test:")
+    print(entity["urn"])
 
-health_issues = []
-if not description:
-    health_issues.append("Missing documentation")
-if not has_owner:
-    health_issues.append("Missing owner")
+    # Fetch lineage (upstream)
+    try:
+        lineage_result = client2.lineage.get_lineage(source_urn=urn, direction="upstream")
+    except Exception:
+        lineage_result = []
+    print("\nUpstream lineage:")
+    print(lineage_result)
 
-pii_fields = []
-try:
-    entity_obj = client2.entities.get(urn)
-    for field in entity_obj.schema:
-        if field.tags:
-            for tag_assoc in field.tags:
-                if "PII" in tag_assoc.tag:
-                    pii_fields.append(field.field_path)
-except Exception:
-    pass
+    # Health check: missing documentation or missing owner
+    description = entity["aspects"].get("editableDatasetProperties", {}).get("value", {}).get("description", "")
+    has_owner = "ownership" in entity["aspects"]
 
-if pii_fields:
-    health_issues.append(f"Contains PII fields without documented access controls: {', '.join(pii_fields)}")
+    health_issues = []
+    if not description:
+        health_issues.append("Missing documentation")
+    if not has_owner:
+        health_issues.append("Missing owner")
 
-print("\nHealth check:")
-for issue in health_issues:
-    print(f"- {issue}")
+    pii_fields = []
+    try:
+        entity_obj = client2.entities.get(urn)
+        for field in entity_obj.schema:
+            if field.tags:
+                for tag_assoc in field.tags:
+                    if "PII" in tag_assoc.tag:
+                        pii_fields.append(field.field_path)
+    except Exception:
+        pass
 
-if not health_issues:
-    print("- No issues found")
+    if pii_fields:
+        health_issues.append(f"Contains PII fields without documented access controls: {', '.join(pii_fields)}")
 
-report = explain_health_report(urn, lineage_result, health_issues)
-print("\nPlain-English Health Report:")
-print(report)
+    print("\nHealth check:")
+    for issue in health_issues:
+        print(f"- {issue}")
+    if not health_issues:
+        print("- No issues found")
 
-write_report_to_datahub(urn, report)
+    report = explain_health_report(urn, lineage_result, health_issues)
+    print("\nPlain-English Health Report:")
+    print(report)
+
+    write_report_to_datahub(urn, report)
+
+
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Check DataHub dataset health and lineage.")
+parser.add_argument("--dataset", help="Dataset URN to inspect")
+parser.add_argument("--scan-all", action="store_true", help="Scan all datasets in DataHub")
+parser.add_argument("--limit", type=int, default=None, help="Limit number of datasets when using --scan-all")
+args = parser.parse_args()
+
+if not args.dataset and not args.scan_all:
+    parser.error("Provide either --dataset <urn> or --scan-all")
+
+if args.scan_all:
+    print("Scanning all datasets in DataHub...")
+    all_urns = list(graph.get_urns_by_filter(entity_types=["dataset"]))
+    if args.limit:
+        all_urns = all_urns[:args.limit]
+    print(f"Found {len(all_urns)} datasets to process.\n")
+    for i, dataset_urn in enumerate(all_urns, start=1):
+        print(f"\n{'='*60}")
+        print(f"[{i}/{len(all_urns)}] Analyzing: {dataset_urn}")
+        print(f"{'='*60}")
+        analyze_dataset(dataset_urn)
+else:
+    analyze_dataset(args.dataset)
